@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="mn"><head><meta charset="utf-8"><title>Ochir Couture</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark;--gold:#D4AF37}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{background:#0B0F19;color:#F3F4F6;font-family:Inter,sans-serif;margin:0}
+h1,h2,h3,.logo{font-family:Cinzel,serif}.q{font-family:'Playfair Display',serif;font-style:italic}
+.glass{background:rgba(17,24,39,.6);backdrop-filter:blur(24px);border:1px solid rgba(212,175,55,.3);border-radius:14px}
+.btn{background:linear-gradient(135deg,#D4AF37,#C5A059);color:#0B0F19;font-weight:500;padding:.55rem 1.1rem;border-radius:8px;cursor:pointer;border:0}
+.btn2{border:1px solid rgba(212,175,55,.5);color:#F3E5AB;padding:.45rem .9rem;border-radius:8px;cursor:pointer;background:none}
+.on{background:#D4AF37!important;color:#0B0F19!important}
+input,select{background:#0B0F19;border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:.5rem;color:#F3F4F6;width:100%}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}.sw.s{border-color:#D4AF37;box-shadow:0 0 8px #D4AF37}
+.muted{color:#94A3B8}.gold{color:#D4AF37}
+.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{padding:.5rem;border-bottom:1px solid #1f2937;text-align:left;white-space:nowrap}
+#toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:60}
+.bar{height:6px;background:#1f2937;border-radius:4px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#C5A059,#F3E5AB);border-radius:4px;transition:width .3s}
+</style></head><body>
+<nav class="sticky top-0 z-40 glass !rounded-none flex items-center justify-between px-4 py-3 flex-wrap gap-2" style="padding-top:calc(.75rem + env(safe-area-inset-top,0px))">
+<a href="#top" class="logo gold text-xl tracking-widest">OCHIR COUTURE</a>
+<div class="flex gap-4 text-sm items-center flex-wrap" id="nav">
+<a href="#catalog">Каталог</a><a href="#studio">3D Студи</a><a href="#order">Захиалга</a>
+<button class="btn2" id="viewBtn">Admin Portal</button></div></nav>
+
+<div id="client">
+<header id="top" class="text-center px-6 py-20">
+<p class="muted text-xs tracking-[.4em] mb-4">HAUTE COUTURE · АЖЛЫН ТУСГАЙ ХУВЦАС</p>
+<h1 class="text-4xl md:text-6xl gold mb-4">OCHIR COUTURE</h1>
+<p class="q text-xl muted mb-8">Үдшийн гоёлоос уурхайн хамгаалалт хүртэл</p>
+<a href="#catalog" class="btn">Каталог үзэх</a> <a href="#studio" class="btn2 inline-block">3D Студи</a></header>
+
+<section id="catalog" class="max-w-6xl mx-auto px-4 py-12">
+<h2 class="text-3xl gold mb-6">Каталог</h2>
+<div class="flex flex-wrap gap-2 mb-4" id="filters"></div>
+<input id="search" placeholder="Нэр, материал, онцлогоор хайх…" class="mb-6">
+<div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div></section>
+
+<section id="studio" class="max-w-6xl mx-auto px-4 py-12">
+<h2 class="text-3xl gold mb-6">Workwear Engineering Studio</h2>
+<div class="grid md:grid-cols-2 gap-6">
+<div class="glass p-4"><div id="stage" class="rounded-lg overflow-hidden" style="background:#111827"></div><p class="muted text-xs mt-2 text-center">Чирж эргүүлнэ · drag to rotate</p>
+<div class="flex gap-2 mt-3 flex-wrap" id="gar"></div>
+<div class="mt-4"><label class="muted text-xs">Lux (0 шөнө – 500 өдөр): <b id="luxv">500</b></label>
+<input type="range" id="lux" min="0" max="500" value="500" class="!p-0"></div></div>
+<div class="glass p-4 space-y-4">
+<div><p class="muted text-xs mb-2">Үндсэн өнгө</p><div class="flex gap-2 flex-wrap" id="swB"></div></div>
+<div><p class="muted text-xs mb-2">Нэмэлт өнгө (мөр, халаас, захиа)</p><div class="flex gap-2 flex-wrap" id="swA"></div></div>
+<div class="flex gap-2 flex-wrap" id="ctl"></div>
+<div><p class="muted text-xs mb-2">Харагдах хэлбэр · Preset</p><div class="flex gap-2 flex-wrap" id="presets"></div></div>
+<div><p class="muted text-xs mb-1">Лого оёдол</p><input id="logo" value="OCHIR"></div>
+<div><p class="muted text-xs mb-2">Нэхмэлийн харьцаа</p><div class="flex gap-2" id="ratio"></div><p class="text-xs muted mt-2" id="rdesc"></p></div>
+<div class="space-y-2 text-xs"><div>Durability<div class="bar"><i id="m1"></i></div></div><div>Breathability<div class="bar"><i id="m2"></i></div></div><div>Softness<div class="bar"><i id="m3"></i></div></div></div>
+<button class="btn w-full" id="toOrder">Энэ дизайнаар захиалах</button></div></div></section>
+
+<section id="order" class="max-w-3xl mx-auto px-4 py-12">
+<h2 class="text-3xl gold mb-6">Захиалгын форм</h2>
+<form id="form" class="glass p-5 grid sm:grid-cols-2 gap-3">
+<input name="name" placeholder="Нэр" required><input name="phone" placeholder="Утас" required>
+<input name="company" placeholder="Компани"><select name="item" id="fItem"></select>
+<select name="ratio"><option>65/35</option><option>20/80</option></select><select name="swatch" id="fSw"></select>
+<select name="size"><option>S</option><option>M</option><option selected>L</option><option>XL</option><option>2XL</option><option>3XL</option><option>4XL</option></select>
+<input name="qty" type="number" min="1" value="1" required>
+<p class="muted text-xs sm:col-span-2">Өөрийн хэмжээ (см) · заавал биш</p>
+<input name="height" placeholder="Өндөр"><input name="chest" placeholder="Цээж"><input name="waist" placeholder="Бүс"><input name="hip" placeholder="Ташаа"><input name="sleeve" placeholder="Ханцуй">
+<div class="sm:col-span-2 flex justify-between items-center"><div><p class="muted text-xs">1–9 энгийн · 10–49 −10% · 50+ −20%</p><p class="text-2xl gold" id="total">0₮</p></div><button class="btn">Захиалах</button></div></form></section>
+</div>
+
+<section id="admin" class="hidden max-w-6xl mx-auto px-4 py-12">
+<div class="flex justify-between items-center mb-4 flex-wrap gap-2"><h2 class="text-3xl gold">Admin Portal</h2><button class="btn" id="csv">CSV татах</button></div>
+<div class="glass p-3 wrap mb-8"><table id="ot"></table></div>
+<h3 class="text-xl gold mb-3">Бүтээгдэхүүн нэмэх</h3>
+<form id="pf" class="glass p-4 grid sm:grid-cols-5 gap-2 mb-4"><input name="name" placeholder="Нэр" required><select name="cat"><option>Workwear</option><option>Evening</option><option>Deel</option><option>Corporate</option></select><input name="price" type="number" placeholder="Үнэ ₮" required><input name="fabric" placeholder="Материал"><button class="btn">Нэмэх</button></form>
+<div class="glass p-3 wrap"><table id="pt"></table></div></section>
+
+<footer class="text-center muted text-xs py-10 border-t border-[#1f2937]">
+<a href="#top" class="mx-2">Нүүр</a><a href="#catalog" class="mx-2">Каталог</a><a href="#studio" class="mx-2">Студи</a><a href="#order" class="mx-2">Захиалга</a>
+<p class="mt-3">© Ochir Couture · ISO 9001:2015</p></footer>
+<div id="toast"></div>
+
+<script>
+const SW=[[201,'Royal Blue','#2563eb'],[202,'Navy Blue','#1e3a8a'],[203,'Dark Navy','#0f172a'],[204,'Charcoal Grey','#475569'],[205,'Sky Blue','#38bdf8'],[206,'Beige Cream','#fef08a'],[207,'Ivory White','#f8fafc'],[208,'Bright Red','#dc2626'],[209,'Safety Orange','#ea580c'],[210,'Safety Yellow','#eab308'],[211,'Teal Green','#0d9488'],[212,'Deep Black','#18181b']];
+const col=c=>SW.find(s=>s[0]==c)[2];
+const CATS={All:'All',Workwear:'Workwear (Ажлын хувцас)',Evening:'Evening Gowns (Үдшийн гоёл)',Deel:'Traditional Deel (Үндэсний дээл)',Corporate:'Corporate (Албаны дүрэмт)'};
+const STAT=['INITIAL_RECEIVED','IN_PRODUCTION','QC_PASSED','DELIVERED'];
+const RATIO={'65/35':{d:'65% Polyester / 35% Cotton · ISO 13934-1 урагдалтад тэсвэртэй, багтах нь бага',m:[95,55,50]},'20/80':{d:'20% Polyester / 80% Combed Cotton · амьсгалах, зөөлөн',m:[60,92,95]}};
+const PRESETS=[['Mining',202,209],['Engineering',204,205],['Highway',201,210],['Stealth',212,204]];
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let P=ld('oc_p',[{id:1,name:'Аюулгүй хүрэм',cat:'Workwear',price:185000,fabric:'65/35 Twill',tags:'3M тууз, Олон халаас'},{id:2,name:'Инженер хүрэм',cat:'Workwear',price:210000,fabric:'20/80 Cotton',tags:'Амьсгалах, Зөөлөн'},{id:3,name:'Карго өмд',cat:'Workwear',price:120000,fabric:'65/35 Twill',tags:'Бэхэлсэн өвдөг'},{id:4,name:'Үдшийн даашинз',cat:'Evening',price:1450000,fabric:'Silk Satin',tags:'Гар оёдол, Haute couture'},{id:5,name:'Үндэсний дээл',cat:'Deel',price:980000,fabric:'Silk Brocade',tags:'Уламжлалт, Гар хатгамал'},{id:6,name:'Албаны дүрэмт хослол',cat:'Corporate',price:390000,fabric:'Wool Blend',tags:'Компанийн лого'}]);
+let O=ld('oc_o',[]);
+let S={f:'All',q:'',g:'suit',b:202,a:209,back:false,tape:true,tc:'#E2E8F0',lux:500,r:'65/35'};
+function toast(t){const e=$('#toast');e.innerHTML='<div class="glass px-4 py-2 text-sm">'+esc(t)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>e.innerHTML='',2600)}
+const mnt=n=>Math.round(n).toLocaleString('en-US')+'₮';
+function catalog(){
+$('#filters').innerHTML=Object.entries(CATS).map(([k,v])=>`<button class="btn2 ${S.f==k?'on':''}" data-f="${k}">${v}</button>`).join('');
+const q=S.q.toLowerCase(),L=P.filter(p=>(S.f=='All'||p.cat==S.f)&&(p.name+p.fabric+p.tags).toLowerCase().includes(q));
+$('#grid').innerHTML=L.map(p=>`<div class="glass p-4 flex flex-col gap-2"><h3 class="text-lg">${esc(p.name)}</h3>
+<p class="muted text-xs">${esc(p.cat)} · ${esc(p.fabric)} · ISO 9001</p><p class="text-sm">${esc(p.tags)}</p>
+<p class="gold text-xl mt-auto">${mnt(p.price)}</p><button class="btn" data-o="${p.id}">Захиалах</button></div>`).join('')||'<p class="muted">Олдсонгүй</p>';
+$('#fItem').innerHTML=P.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');}
+function sw(el,key){$(el).innerHTML=SW.map(s=>`<button class="sw ${S[key]==s[0]?'s':''}" style="background:${s[2]}" title="${s[0]} ${s[1]}" data-${key}="${s[0]}"></button>`).join('')}
+function tape(y,w){return S.tape?`<rect x="${w[0]}" y="${y}" width="${w[1]}" height="9" fill="${S.tc}"/>`:''}
+function jacket(P1,A,t){const back=S.back;
+const g=`<path d="M90 45L55 60L40 190L68 195L90 110Z M210 45L245 60L260 190L232 195L210 110Z" fill="${P1}"/><rect x="90" y="40" width="120" height="175" rx="8" fill="${P1}"/>
+<path d="M90 45L55 60L60 92L90 80ZM210 45L245 60L240 92L210 80Z" fill="${A}"/>
+${back?`<rect x="125" y="32" width="50" height="12" rx="4" fill="${A}"/>`:`<path d="M125 38L150 66L175 38L165 30L150 44L135 30Z" fill="${A}"/><rect x="100" y="140" width="32" height="30" fill="${A}"/><rect x="168" y="140" width="32" height="30" fill="${A}"/><line x1="150" y1="66" x2="150" y2="215" stroke="#0004" stroke-width="2"/>`}
+<text x="${back?150:118}" y="${back?110:105}" text-anchor="middle" font-size="${back?18:9}" font-family="Cinzel" fill="#F3E5AB">${esc(($('#logo')||{value:''}).value)}</text>`;
+const tp=tape(172,[90,120])+tape(158,[42,24])+tape(158,[234,24]);return[g,tp]}
+function pants(P1,A,dy){const g=`<g transform="translate(0,${dy})"><path d="M95 205H205V225L192 355H152L150 240L148 355H108L95 225Z" fill="${P1}"/><rect x="95" y="205" width="110" height="14" fill="${A}"/>${S.back?'':`<rect x="102" y="255" width="30" height="34" fill="${A}"/><rect x="168" y="255" width="30" height="34" fill="${A}"/>`}</g>`;
+const tp=S.tape?`<g transform="translate(0,${dy})"><rect x="108" y="320" width="40" height="8" fill="${S.tc}"/><rect x="154" y="320" width="38" height="8" fill="${S.tc}"/></g>`:'';return[g,tp]}
+function viz(){const p=col(S.b),a=col(S.a),k=S.lux/500;let G='',T='',vb='0 0 300 360';
+if(S.g!='pants'){const j=jacket(p,a);G+=j[0];T+=j[1]}
+if(S.g!='jacket'){const q=pants(p,a,S.g=='pants'?-170:0);G+=q[0];T+=q[1]}
+if(S.g=='jacket')vb='0 0 300 230';if(S.g=='pants')vb='0 0 300 200';
+const glow=S.lux<200?`drop-shadow(0 0 ${6+(200-S.lux)/12}px ${S.tc})`:'none';
+if(window.THREE){up3d()}else $('#stage').innerHTML=`<svg viewBox="${vb}" class="w-full" style="max-height:420px"><g style="filter:brightness(${.25+.75*k})">${G}</g><g style="filter:${glow}">${T}</g></svg>`;
+$('#luxv').textContent=S.lux;const m=RATIO[S.r].m;['m1','m2','m3'].forEach((id,i)=>$('#'+id).style.width=m[i]+'%');$('#rdesc').textContent=RATIO[S.r].d;
+sw('#swB','b');sw('#swA','a');
+$('#gar').innerHTML=[['suit','Хослол'],['jacket','Хүрэм'],['pants','Өмд']].map(x=>`<button class="btn2 ${S.g==x[0]?'on':''}" data-g="${x[0]}">${x[1]}</button>`).join('');
+$('#ctl').innerHTML=`<button class="btn2" data-back="1">${S.back?'Урд талаас':'Ар талаас'}</button><button class="btn2 ${S.tape?'on':''}" data-tape="1">3M тууз</button><button class="btn2" data-tc="#E2E8F0">Silver</button><button class="btn2" data-tc="#84CC16">Lime</button>`;
+$('#ratio').innerHTML=Object.keys(RATIO).map(r=>`<button class="btn2 ${S.r==r?'on':''}" data-r="${r}">${r}</button>`).join('');
+$('#presets').innerHTML=PRESETS.map((x,i)=>`<button class="btn2" data-p="${i}">${x[0]}</button>`).join('');}
+function calc(){const f=$('#form'),p=P.find(x=>x.id==f.item.value),n=+f.qty.value||1,d=n>=50?.8:n>=10?.9:1;const t=p?p.price*n*d:0;$('#total').textContent=mnt(t);return t}
+function admin(){$('#ot').innerHTML='<tr><th>ID</th><th>Нэр</th><th>Утас</th><th>Компани</th><th>Бараа</th><th>Материал</th><th>Swatch</th><th>Хэмжээ</th><th>Тоо</th><th>Дүн</th><th>Төлөв</th></tr>'+(O.map(o=>`<tr><td>${o.id}</td><td>${esc(o.name)}</td><td>${esc(o.phone)}</td><td>${esc(o.company)}</td><td>${esc(o.item)}</td><td>${o.ratio}</td><td>${o.swatch}</td><td>${esc(o.size)} ${esc(o.meas)}</td><td>${o.qty}</td><td>${mnt(o.total)}</td><td><select data-st="${o.id}" style="width:auto">${STAT.map(s=>`<option ${s==o.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('')||'<tr><td colspan="11" class="muted">Захиалга алга</td></tr>');
+$('#pt').innerHTML=P.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.cat}</td><td>${mnt(p.price)}</td><td>${esc(p.fabric)}</td><td><button class="btn2" data-del="${p.id}">Устгах</button></td></tr>`).join('')}
+function setView(v){const a=v=='admin';$('#client').classList.toggle('hidden',a);$('#admin').classList.toggle('hidden',!a);$('#viewBtn').textContent=a?'Client View':'Admin Portal';if(a)admin();scrollTo(0,0)}
+document.addEventListener('click',e=>{const d=e.target.dataset||{};
+if(d.f){S.f=d.f;catalog()}
+if(d.o){$('#fItem').value=d.o;calc();$('#order').scrollIntoView();toast('Загвар сонгогдлоо')}
+if(d.b){S.b=+d.b;viz()}if(d.a){S.a=+d.a;viz()}if(d.g){S.g=d.g;viz()}
+if(d.back){S.back=!S.back;viz()}if(d.tape){S.tape=!S.tape;viz()}if(d.tc){S.tc=d.tc;viz()}
+if(d.r){S.r=d.r;viz()}if(d.p){const x=PRESETS[d.p];S.b=x[1];S.a=x[2];viz()}
+if(d.del){P=P.filter(p=>p.id!=d.del);sv('oc_p',P);admin();catalog();toast('Устгагдлаа')}});
+$('#search').oninput=e=>{S.q=e.target.value;catalog()};
+$('#lux').oninput=e=>{S.lux=+e.target.value;viz()};$('#logo').oninput=viz;
+$('#viewBtn').onclick=()=>setView($('#admin').classList.contains('hidden')?'admin':'client');
+$('#toOrder').onclick=()=>{const f=$('#form');f.swatch.value=S.b;f.ratio.value=S.r;$('#order').scrollIntoView();toast('Өнгө, харьцаа орууллаа')};
+$('#form').oninput=calc;
+$('#form').onsubmit=e=>{e.preventDefault();const f=e.target,p=P.find(x=>x.id==f.item.value);
+const meas=['height','chest','waist','hip','sleeve'].filter(k=>f[k].value).map(k=>k[0].toUpperCase()+':'+f[k].value).join(' ');
+O.unshift({id:'OC-'+String(Date.now()).slice(-6),name:f.name.value,phone:f.phone.value,company:f.company.value,item:p.name,ratio:f.ratio.value,swatch:f.swatch.value,size:f.size.value,meas,qty:+f.qty.value,total:calc(),status:STAT[0]});
+sv('oc_o',O);f.reset();calc();toast('Захиалга хүлээн авлаа!')};
+document.addEventListener('change',e=>{const id=e.target.dataset.st;if(id){O.find(o=>o.id==id).status=e.target.value;sv('oc_o',O);toast('Төлөв шинэчлэгдлээ')}});
+$('#pf').onsubmit=e=>{e.preventDefault();const f=e.target;P.push({id:Date.now(),name:f.name.value,cat:f.cat.value,price:+f.price.value,fabric:f.fabric.value||'—',tags:''});sv('oc_p',P);f.reset();admin();catalog();toast('Нэмэгдлээ')};
+$('#csv').onclick=()=>{const h='ID,Name,Phone,Company,Item,Material,Swatch,Size,Qty,Total,Status';const r=O.map(o=>[o.id,o.name,o.phone,o.company,o.item,o.ratio,o.swatch,o.size+' '+o.meas,o.qty,o.total,o.status].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+h+'\n'+r.join('\n')],{type:'text/csv'}));a.download='ochir-orders.csv';a.click()};
+$('#fSw').innerHTML=SW.map(s=>`<option value="${s[0]}">${s[0]} ${s[1]}</option>`).join('');
+let T3;
+function init3dOld(){
+const el=$('#stage');el.style.height='420px';const W=el.clientWidth||400,H=420;
+const R=new THREE.WebGLRenderer({antialias:true});R.setSize(W,H);R.setPixelRatio(Math.min(devicePixelRatio,2));el.appendChild(R.domElement);R.domElement.style.touchAction='none';R.domElement.style.cursor='grab';
+const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,W/H,.1,50);
+const amb=new THREE.HemisphereLight(0xffffff,0x222233,1),dl=new THREE.DirectionalLight(0xffffff,1),rim=new THREE.DirectionalLight(0xD4AF37,.5);dl.position.set(3,5,6);rim.position.set(-4,2,-5);sc.add(amb,dl,rim);
+const mP=new THREE.MeshStandardMaterial({roughness:.85}),mA=new THREE.MeshStandardMaterial({roughness:.7}),mT=new THREE.MeshStandardMaterial({roughness:.35,metalness:.3}),mK=new THREE.MeshStandardMaterial({color:0x2a2f3a,roughness:.6});
+const root=new THREE.Group(),J=new THREE.Group(),Pn=new THREE.Group(),tapes=[];root.add(J,Pn);sc.add(root);
+const cy=(a,b,h,s,open)=>new THREE.CylinderGeometry(a,b,h,s||32,1,!!open);
+const add=(g,geo,m,x,y,z,sz,rz,t)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.scale.z=sz||1;if(rz)o.rotation.z=rz;g.add(o);if(t)tapes.push(o);return o};
+// jacket
+add(J,cy(.62,.55,1.5),mP,0,1.45,0,.62);
+add(J,cy(.1,.1,.2,16),mK,0,2.33,0);add(J,new THREE.SphereGeometry(.2,24,16),mK,0,2.6,0);
+[-1,1].forEach(s=>{add(J,cy(.2,.15,1.5,24),mP,s*.86,1.45,0,1,s*.18);add(J,new THREE.SphereGeometry(.24,24,16),mA,s*.66,2.1,0,.9);add(J,cy(.152,.152,.12,24),mA,s*.935,.74,0,1,s*.18);add(J,cy(.19,.19,.09,24,true),mT,s*.905,1.2,0,1,s*.18,1);add(J,new THREE.BoxGeometry(.3,.3,.06),mA,s*.3,1.15,.32)});
+const col3=new THREE.Mesh(new THREE.TorusGeometry(.3,.07,12,32),mA);col3.position.y=2.22;col3.rotation.x=Math.PI/2;col3.scale.y=.7;J.add(col3);
+add(J,new THREE.BoxGeometry(.03,1.5,.02),mK,0,1.45,.37);
+add(J,cy(.59,.59,.1,40,true),mT,0,1.0,0,.62,0,1);
+// pants
+[-1,1].forEach(s=>{add(Pn,cy(.29,.2,1.8),mP,s*.28,-.2,0,.85);add(Pn,new THREE.BoxGeometry(.28,.3,.06),mA,s*.28,.15,.24);add(Pn,cy(.215,.215,.1,24,true),mT,s*.28,-.75,0,.85,0,1)});
+add(Pn,cy(.6,.6,.14,40),mA,0,.72,0,.62);
+// logos
+const mk=w=>{const c=document.createElement('canvas');c.width=512;c.height=128;const t=new THREE.CanvasTexture(c);const m=new THREE.Mesh(new THREE.PlaneGeometry(w,w/4),new THREE.MeshBasicMaterial({map:t,transparent:true}));m.userData.c=c;m.userData.t=t;return m};
+const lf=mk(.4),lb=mk(.75);lf.position.set(-.25,1.85,.345);lb.position.set(0,1.7,-.378);lb.rotation.y=Math.PI;J.add(lf,lb);
+T3={R,sc,cam,amb,dl,rim,mP,mA,mT,root,J,Pn,tapes,lf,lb,rot:0,lb2:false};
+let dr=false,lx=0;const d=R.domElement;
+d.onpointerdown=e=>{dr=true;lx=e.clientX;d.setPointerCapture(e.pointerId);d.style.cursor='grabbing'};
+d.onpointermove=e=>{if(dr){T3.rot+=(e.clientX-lx)*.012;lx=e.clientX}};
+d.onpointerup=()=>{dr=false;d.style.cursor='grab'};
+addEventListener('resize',()=>{const w=el.clientWidth;R.setSize(w,H);cam.aspect=w/H;cam.updateProjectionMatrix()});
+(function loop(){root.rotation.y+=(T3.rot-root.rotation.y)*.12;R.render(sc,cam);requestAnimationFrame(loop)})();
+}
+function up3dOld(){if(!T3)init3dOld();const t=T3,k=S.lux/500;
+t.mP.color.set(col(S.b));t.mA.color.set(col(S.a));t.mT.color.set(S.tc);t.mT.emissive.set(S.tc);t.mT.emissiveIntensity=(1-k)*1.3;
+t.amb.intensity=.15+.95*k;t.dl.intensity=.05+1.1*k;t.rim.intensity=.5;
+t.J.visible=S.g!='pants';t.Pn.visible=S.g!='jacket';t.tapes.forEach(o=>o.visible=S.tape);
+t.root.position.y=S.g=='suit'?-.65:S.g=='jacket'?-1.55:.2;t.cam.position.set(0,.2,S.g=='suit'?7.4:5.4);t.cam.lookAt(0,0,0);
+if(t.lb2!==S.back){t.rot=S.back?Math.PI:0;t.lb2=S.back}
+const txt=($('#logo').value||'').slice(0,14);[t.lf,t.lb].forEach(m=>{const c=m.userData.c,x=c.getContext('2d');x.clearRect(0,0,512,128);x.fillStyle='#F3E5AB';x.font='bold 70px Cinzel,serif';x.textAlign='center';x.textBaseline='middle';x.fillText(txt,256,64,480);m.userData.t.needsUpdate=true});}
+function weave(){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#d6d6d6';x.fillRect(0,0,256,256);
+for(let i=-256;i<512;i+=8){x.strokeStyle='#fff';x.lineWidth=3.5;x.beginPath();x.moveTo(i,0);x.lineTo(i+256,256);x.stroke();x.strokeStyle='#a8a8a8';x.lineWidth=1.6;x.beginPath();x.moveTo(i+4,0);x.lineTo(i+260,256);x.stroke()}
+for(let i=0;i<3000;i++){x.fillStyle='rgba(0,0,0,'+Math.random()*.09+')';x.fillRect(Math.random()*256,Math.random()*256,2,2)}
+const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t}
+function init3d(){
+const el=$('#stage');el.style.height='440px';const W=el.clientWidth||400,H=440;
+const R=new THREE.WebGLRenderer({antialias:true});R.setSize(W,H);R.setPixelRatio(Math.min(devicePixelRatio,2));
+R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.1;R.outputEncoding=THREE.sRGBEncoding;
+el.appendChild(R.domElement);R.domElement.style.touchAction='none';R.domElement.style.cursor='grab';
+const sc=new THREE.Scene();sc.background=new THREE.Color(0x0B0F19).convertSRGBToLinear();const cam=new THREE.PerspectiveCamera(32,W/H,.1,60);
+const pm=new THREE.PMREMGenerator(R),es=new THREE.Scene();es.add(new THREE.Mesh(new THREE.BoxGeometry(30,30,30),new THREE.MeshBasicMaterial({color:0x252b3b,side:THREE.BackSide})));
+[[0,9,6,10,3],[-9,3,2,4,6],[9,2,-3,3,6],[0,3,-9,8,2]].forEach(a=>{const m=new THREE.Mesh(new THREE.BoxGeometry(a[3],a[4],.3),new THREE.MeshBasicMaterial({color:new THREE.Color(7,7,7)}));m.position.set(a[0],a[1],a[2]);m.lookAt(0,0,0);es.add(m)});
+sc.environment=pm.fromScene(es,.03).texture;
+const hemi=new THREE.HemisphereLight(0xdfe8ff,0x1a1d28,.5),dl=new THREE.DirectionalLight(0xfff4e0,2),rim=new THREE.DirectionalLight(0xD4AF37,1),lamp=new THREE.PointLight(0xfff1c9,0,16);
+dl.position.set(3.5,6,5);dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);Object.assign(dl.shadow.camera,{left:-3.5,right:3.5,top:4,bottom:-4,near:1,far:20});dl.shadow.camera.updateProjectionMatrix();dl.shadow.bias=-.0004;dl.shadow.normalBias=.02;
+rim.position.set(-4,3,-5);lamp.position.set(0,.5,6);sc.add(hemi,dl,rim,lamp);
+const wv=weave(),mk=o=>new THREE.MeshStandardMaterial(Object.assign({map:wv,bumpMap:wv,bumpScale:1,roughness:.9,side:THREE.DoubleSide},o));
+const mP=mk(),mA=mk(),mT=new THREE.MeshStandardMaterial({roughness:.28,metalness:.55}),mK=new THREE.MeshStandardMaterial({color:0x232733,roughness:.55,metalness:.1}),mG=new THREE.MeshStandardMaterial({color:0xD4AF37,roughness:.28,metalness:1});
+const root=new THREE.Group(),J=new THREE.Group(),Pn=new THREE.Group(),tapes=[];root.add(J,Pn);sc.add(root);
+const V=(a,b)=>new THREE.Vector3(a,b,0),cy=(a,b,h,s,o)=>new THREE.CylinderGeometry(a,b,h,s||32,1,!!o),lt=p=>new THREE.LatheGeometry(p.map(a=>new THREE.Vector2(a[0],a[1])),64);
+const add=(g,geo,m,x,y,z,sz,rz,t)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.scale.z=sz||1;if(rz)o.rotation.z=rz;g.add(o);if(t)tapes.push(o);return o};
+const st=(g,pts)=>{const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineDashedMaterial({color:0xfff2c0,dashSize:.025,gapSize:.018}));l.computeLineDistances();g.add(l)};
+const pk=(g,x,y,z,w,h)=>{add(g,new THREE.BoxGeometry(w,h,.07),mA,x,y,z);add(g,new THREE.BoxGeometry(w+.02,h*.38,.085),mA,x,y+h*.31,z+.008);
+st(g,[[-1,-1],[1,-1],[1,1],[-1,1],[-1,-1]].map(a=>new THREE.Vector3(x+a[0]*(w/2-.025),y+a[1]*(h/2-.025),z+.037)));add(g,cy(.028,.028,.02,16),mG,x,y+h*.12,z+.05).rotation.x=Math.PI/2};
+// jacket
+add(J,lt([[.6,.7],[.595,.8],[.575,1],[.57,1.25],[.6,1.6],[.625,1.9],[.58,2.1],[.4,2.2],[.24,2.25],[.23,2.4]]),mP,0,0,0,.62);
+add(J,cy(.1,.1,.22,16),mK,0,2.33,0);const hd=add(J,new THREE.SphereGeometry(.2,32,24),mK,0,2.62,0,.95);hd.scale.y=1.2;
+add(J,cy(.27,.3,.2,40,true),mA,0,2.3,0,.75);
+[-1,1].forEach(s=>{const sl=new THREE.Group();sl.position.set(s*.7,2.05,0);sl.rotation.z=s*.16;J.add(sl);
+add(sl,lt([[.2,0],[.222,-.2],[.19,-.7],[.17,-1.1],[.155,-1.45],[.15,-1.5]]),mP,0,0,0,.95);
+const sh=add(sl,new THREE.SphereGeometry(.235,32,20),mA,0,.02,0,.95);sh.scale.y=.8;
+add(sl,cy(.16,.16,.14,32),mA,0,-1.43,0,.95);add(sl,cy(.18,.18,.08,32,true),mT,0,-.95,0,.95,0,1);add(sl,cy(.178,.178,.08,32,true),mT,0,-.8,0,.95,0,1)});
+[-1,1].forEach(s=>{pk(J,s*.3,1.28,.305,.27,.3);pk(J,s*.28,1.62,.335,.22,.2)});
+add(J,new THREE.BoxGeometry(.025,1.45,.015),mK,0,1.48,.372);add(J,new THREE.BoxGeometry(.035,.09,.02),mG,0,2.05,.385);
+add(J,cy(.585,.585,.09,48,true),mT,0,1,0,.62,0,1);add(J,cy(.6,.6,.09,48,true),mT,0,.84,0,.62,0,1);
+// pants
+add(Pn,lt([[.6,.82],[.61,.6],[.58,.35],[.45,.12],[.01,.05]]),mP,0,0,0,.5);
+[-1,1].forEach(s=>{const lg=new THREE.Group();lg.position.set(s*.29,.75,0);Pn.add(lg);add(lg,lt([[.3,0],[.29,-.4],[.24,-.95],[.22,-1.4],[.21,-1.8]]),mP,0,0,0,.95);
+add(lg,cy(.227,.227,.09,32,true),mT,0,-1.57,0,.95,0,1);add(lg,cy(.222,.222,.09,32,true),mT,0,-1.73,0,.95,0,1);
+const kp=add(lg,new THREE.SphereGeometry(.2,24,16),mA,0,-1.03,.23,.22);kp.scale.set(.85,1,.22);pk(Pn,s*.31,.2,.285,.26,.3)});
+add(Pn,cy(.605,.605,.13,48),mA,0,.8,0,.5);add(Pn,cy(.03,.03,.02,16),mG,0,.8,.31).rotation.x=Math.PI/2;
+[-1,1].forEach(s=>add(Pn,new THREE.BoxGeometry(.04,.17,.03),mK,s*.2,.8,.29));st(Pn,[new THREE.Vector3(.015,.74,.3),new THREE.Vector3(.015,.4,.3)]);
+// logos
+const mkL=w=>{const c=document.createElement('canvas');c.width=512;c.height=128;const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;const m=new THREE.Mesh(new THREE.PlaneGeometry(w,w/4),new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.6}));m.userData.c=c;m.userData.t=t;return m};
+const lf=mkL(.4),lb=mkL(.75);lf.position.set(-.25,1.9,.34);lb.position.set(0,1.7,-.378);lb.rotation.y=Math.PI;J.add(lf,lb);
+root.traverse(o=>{if(o.isMesh&&o!==lf&&o!==lb){o.castShadow=o.receiveShadow=true}});
+const fl=new THREE.Mesh(new THREE.CircleGeometry(2.4,64),new THREE.MeshStandardMaterial({color:0x151b2b,roughness:.35,metalness:.6}));fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;
+const ring=new THREE.Mesh(new THREE.TorusGeometry(2.4,.015,8,96),mG);ring.rotation.x=Math.PI/2;const stand=new THREE.Mesh(cy(.03,.03,.3,16),mK);sc.add(fl,ring,stand);
+T3={R,sc,cam,hemi,dl,rim,lamp,mP,mA,mT,mG,mK,wv,root,J,Pn,tapes,lf,lb,fl,ring,stand,rot:0,lb2:false};
+let dr=false,lx=0;const d=R.domElement;
+d.onpointerdown=e=>{dr=true;lx=e.clientX;d.setPointerCapture(e.pointerId);d.style.cursor='grabbing'};
+d.onpointermove=e=>{if(dr){T3.rot+=(e.clientX-lx)*.012;lx=e.clientX}};d.onpointerup=()=>{dr=false;d.style.cursor='grab'};
+addEventListener('resize',()=>{const w=el.clientWidth;R.setSize(w,H);cam.aspect=w/H;cam.updateProjectionMatrix()});
+(function loop(){root.rotation.y+=(T3.rot-root.rotation.y)*.12;R.render(sc,cam);requestAnimationFrame(loop)})();
+}
+function up3d(){if(!T3)init3d();const t=T3,k=S.lux/500,fine=S.r=='20/80';
+const cs=(m,h)=>m.color.set(h).convertSRGBToLinear();cs(t.mP,col(S.b));cs(t.mA,col(S.a));cs(t.mT,S.tc);t.mT.emissive.set(S.tc).convertSRGBToLinear();t.mT.emissiveIntensity=(1-k)*.9;
+[t.mP,t.mA,t.mT,t.mG,t.mK].forEach(m=>m.envMapIntensity=.12+.9*k);
+t.wv.repeat.set(fine?16:9,fine?16:9);t.mP.bumpScale=t.mA.bumpScale=fine?.6:1.4;t.mP.roughness=t.mA.roughness=fine?.96:.86;
+t.hemi.intensity=.18+.5*k;t.dl.intensity=.1+2.1*k;t.rim.intensity=.8;t.lamp.intensity=(1-k)*2.2;
+const g=S.g;t.J.visible=g!='pants';t.Pn.visible=g!='jacket';t.stand.visible=g=='jacket';t.tapes.forEach(o=>o.visible=S.tape);
+const ry=g=='suit'?-.65:g=='jacket'?-1.55:.1,fy=g=='suit'?-1.7:g=='jacket'?-1.12:-.97;t.root.position.y=ry;t.fl.position.y=fy;t.ring.position.y=fy+.01;t.stand.position.y=-.98;
+t.cam.position.set(0,.4,g=='suit'?8.4:5.6);t.cam.lookAt(0,g=='suit'?.2:.05,0);
+if(t.lb2!==S.back){t.rot=S.back?Math.PI:0;t.lb2=S.back}
+const txt=($('#logo').value||'').slice(0,14);[t.lf,t.lb].forEach(m=>{const c=m.userData.c,x=c.getContext('2d');x.clearRect(0,0,512,128);x.font='bold 70px Cinzel,serif';x.textAlign='center';x.textBaseline='middle';x.lineWidth=6;x.strokeStyle='#5a4510';x.strokeText(txt,256,64,480);x.fillStyle='#F3E5AB';x.fillText(txt,256,64,480);m.userData.t.needsUpdate=true});}
+catalog();viz();calc();
+</script></body></html>
