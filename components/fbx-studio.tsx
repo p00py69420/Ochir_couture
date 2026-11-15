@@ -7,7 +7,7 @@ import { RATIOS, SWATCHES } from "@/lib/constants";
 import type { GarmentView } from "@/lib/database.types";
 import { useCustomizer } from "@/components/customizer-provider";
 
-const MODEL_URL = "/models/Meshy_AI_Winter_Workwear_Figure_20261112_generate.fbx";
+const MODEL_URL = "/models/workwear-textured/Meshy_AI_Winter_Workwear_Figure_20261112_image-to-3d-texture.fbx";
 const PRESETS = [
   { label: "Уурхай", base: 202, accent: 209 },
   { label: "Инженер", base: 204, accent: 205 },
@@ -17,6 +17,86 @@ const PRESETS = [
 
 type ModelSummary = { meshes: number; materials: number; triangles: number };
 type LoadState = "loading" | "ready" | "error";
+type PaletteSelection = {
+  baseSwatch: number;
+  accentSwatch: number;
+  reflectiveTape: boolean;
+  reflectiveColor: string;
+};
+type RecolorUniforms = {
+  uOchirBaseColor: { value: THREE.Color };
+  uOchirAccentColor: { value: THREE.Color };
+  uOchirReflectiveColor: { value: THREE.Color };
+  uOchirTapeEnabled: { value: number };
+};
+
+function getSwatchColor(code: number) {
+  return SWATCHES.find((swatch) => swatch.code === code)?.color ?? SWATCHES[0].color;
+}
+
+function installRecolorShader(material: THREE.Material): RecolorUniforms | null {
+  const texturedMaterial = material as THREE.MeshPhongMaterial;
+  if (!texturedMaterial.map) return null;
+
+  const uniforms: RecolorUniforms = {
+    uOchirBaseColor: { value: new THREE.Color() },
+    uOchirAccentColor: { value: new THREE.Color() },
+    uOchirReflectiveColor: { value: new THREE.Color() },
+    uOchirTapeEnabled: { value: 1 },
+  };
+  const originalOnBeforeCompile = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    originalOnBeforeCompile.call(material, shader, renderer);
+    shader.uniforms.uOchirBaseColor = uniforms.uOchirBaseColor;
+    shader.uniforms.uOchirAccentColor = uniforms.uOchirAccentColor;
+    shader.uniforms.uOchirReflectiveColor = uniforms.uOchirReflectiveColor;
+    shader.uniforms.uOchirTapeEnabled = uniforms.uOchirTapeEnabled;
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <map_pars_fragment>",
+      `#include <map_pars_fragment>
+uniform vec3 uOchirBaseColor;
+uniform vec3 uOchirAccentColor;
+uniform vec3 uOchirReflectiveColor;
+uniform float uOchirTapeEnabled;`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <map_fragment>",
+      `vec3 ochirMaterialBase = diffuseColor.rgb;
+#include <map_fragment>
+#ifdef USE_MAP
+  vec3 ochirSourceSrgb = sRGBTransferOETF(vec4(sampledDiffuseColor.rgb, 1.0)).rgb;
+  float ochirBlueMask = smoothstep(0.08, 0.18, ochirSourceSrgb.b - ochirSourceSrgb.r)
+    * smoothstep(0.03, 0.09, ochirSourceSrgb.b - ochirSourceSrgb.g);
+  float ochirOrangeMask = smoothstep(0.17, 0.29, ochirSourceSrgb.r - ochirSourceSrgb.g)
+    * smoothstep(0.09, 0.20, ochirSourceSrgb.g - ochirSourceSrgb.b)
+    * smoothstep(0.45, 0.62, ochirSourceSrgb.r);
+  float ochirMinChannel = min(ochirSourceSrgb.r, min(ochirSourceSrgb.g, ochirSourceSrgb.b));
+  float ochirMaxChannel = max(ochirSourceSrgb.r, max(ochirSourceSrgb.g, ochirSourceSrgb.b));
+  float ochirWhiteMask = smoothstep(0.68, 0.82, ochirMinChannel)
+    * (1.0 - smoothstep(0.17, 0.31, ochirMaxChannel - ochirMinChannel));
+  float ochirBaseShade = 0.70 + 0.27 * sqrt(max(ochirSourceSrgb.b, 0.0));
+  float ochirAccentShade = 0.82 + 0.18 * sqrt(max(ochirSourceSrgb.r, 0.0));
+  float ochirTapeShade = 0.80 + 0.20 * ochirMinChannel;
+  vec3 ochirRecolored = sampledDiffuseColor.rgb;
+  ochirRecolored = mix(ochirRecolored, uOchirBaseColor * ochirBaseShade, ochirBlueMask);
+  ochirRecolored = mix(ochirRecolored, uOchirAccentColor * ochirAccentShade, ochirOrangeMask);
+  vec3 ochirTapeColor = mix(uOchirBaseColor * ochirBaseShade, uOchirReflectiveColor * ochirTapeShade, uOchirTapeEnabled);
+  ochirRecolored = mix(ochirRecolored, ochirTapeColor, ochirWhiteMask);
+  diffuseColor.rgb = ochirMaterialBase * ochirRecolored;
+#endif`,
+    );
+  };
+  material.customProgramCacheKey = () => "ochir-dynamic-workwear-colors-v1";
+  material.needsUpdate = true;
+  return uniforms;
+}
+
+function updateRecolorUniforms(uniforms: RecolorUniforms, palette: PaletteSelection) {
+  uniforms.uOchirBaseColor.value.set(getSwatchColor(palette.baseSwatch));
+  uniforms.uOchirAccentColor.value.set(getSwatchColor(palette.accentSwatch));
+  uniforms.uOchirReflectiveColor.value.set(palette.reflectiveColor);
+  uniforms.uOchirTapeEnabled.value = palette.reflectiveTape ? 1 : 0;
+}
 
 function disposeObject(root: THREE.Object3D) {
   const geometries = new Set<THREE.BufferGeometry>();
@@ -43,9 +123,9 @@ function disposeObject(root: THREE.Object3D) {
 function formatModelNote(summary: ModelSummary | null) {
   if (!summary) return "FBX загварын бүрдлийг шалгаж байна.";
   const structure = summary.meshes === 1 && summary.materials === 1
-    ? "Энэ FBX нь нэг mesh, нэг ерөнхий material-тай."
+    ? "Энэ FBX нь нэг mesh, нэг texture material-тай."
     : `Энэ FBX-д ${summary.meshes} mesh, ${summary.materials} material байна.`;
-  return `${structure} Хувцасны хэсгүүд тусад нь ялгарахгүй тул өнгө, хүрэм/өмд, гэрэл ойлгогч тууз, логоны сонголт загварын дүрслэлийг өөрчлөхгүй; захиалгад хадгалагдана.`;
+  return `${structure} Үндсэн өнгө, нэмэлт өнгө, гэрэл ойлгогч хэсэг 3D дүрслэлд шууд өөрчлөгдөнө. Хувцасны төрөл, лого захиалгад тэмдэглэгдэнэ.`;
 }
 
 function Swatches({
@@ -78,6 +158,7 @@ function Swatches({
 export function FbxStudio() {
   const stageRef = useRef<HTMLDivElement>(null);
   const sceneModel = useRef<THREE.Object3D | null>(null);
+  const recolorUniformsRef = useRef<RecolorUniforms[]>([]);
   const renderRequest = useRef<number | null>(null);
   const invalidateRef = useRef<(() => void) | null>(null);
   const hemisphereRef = useRef<THREE.HemisphereLight | null>(null);
@@ -109,6 +190,8 @@ export function FbxStudio() {
     lux,
     setLux,
   } = useCustomizer();
+
+  const paletteRef = useRef<PaletteSelection>({ baseSwatch, accentSwatch, reflectiveTape, reflectiveColor });
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -295,6 +378,7 @@ export function FbxStudio() {
 
         const meshList: THREE.Mesh[] = [];
         const materialIds = new Set<string>();
+        const recolorUniforms: RecolorUniforms[] = [];
         let triangles = 0;
         loaded.traverse((object) => {
           const mesh = object as THREE.Mesh;
@@ -304,8 +388,17 @@ export function FbxStudio() {
             ? mesh.geometry.index.count / 3
             : (mesh.geometry.attributes.position?.count ?? 0) / 3;
           const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          materials.forEach((material) => material && materialIds.add(material.uuid));
+          materials.forEach((material) => {
+            if (!material) return;
+            materialIds.add(material.uuid);
+            const uniforms = installRecolorShader(material);
+            if (uniforms) {
+              updateRecolorUniforms(uniforms, paletteRef.current);
+              recolorUniforms.push(uniforms);
+            }
+          });
         });
+        recolorUniformsRef.current = recolorUniforms;
         setSummary({ meshes: meshList.length, materials: materialIds.size, triangles: Math.round(triangles) });
         setLoadState("ready");
         setProgress(100);
@@ -336,6 +429,7 @@ export function FbxStudio() {
       renderer.domElement.removeEventListener("keydown", onKeyDown);
       if (renderRequest.current !== null) cancelAnimationFrame(renderRequest.current);
       if (root) disposeObject(root);
+      recolorUniformsRef.current = [];
       renderer.dispose();
       renderer.domElement.remove();
       renderRequest.current = null;
@@ -358,6 +452,12 @@ export function FbxStudio() {
     if (keyLightRef.current) keyLightRef.current.intensity = 0.35 + level * 2;
     invalidateRef.current?.();
   }, [lux]);
+
+  useEffect(() => {
+    paletteRef.current = { baseSwatch, accentSwatch, reflectiveTape, reflectiveColor };
+    recolorUniformsRef.current.forEach((uniforms) => updateRecolorUniforms(uniforms, paletteRef.current));
+    invalidateRef.current?.();
+  }, [baseSwatch, accentSwatch, reflectiveTape, reflectiveColor]);
 
   const retryLoad = useCallback(() => {
     setLoadState("loading");

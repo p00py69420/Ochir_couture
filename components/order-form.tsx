@@ -148,7 +148,7 @@ export function OrderForm({
                 <input className="field-input" max={2000} min={1} name="quantity" onChange={(event) => setQuantity(Math.max(1, Math.min(2000, Number(event.currentTarget.value) || 1)))} type="number" value={quantity} />
               </label>
               <div className="wide model-limit">
-                Сонгосон өнгө, загвар, тууз, харьцаа болон логоны мэдээллийг захиалгад хавсаргана. 3D загвар нь эдгээр өөрчлөлтийг тусад нь харуулахгүй.
+                Үндсэн өнгө, нэмэлт өнгө болон цацруулагч тууз 3D загварт харагдана. Хувцасны төрөл, харьцаа болон логоны мэдээллийг захиалгад хавсаргана.
               </div>
               <p className="wide field-label" style={{ marginBottom: 0 }}>Хэмжээс (см) · заавал биш</p>
               <label className="field-label">Өндөр<input className="field-input" max={230} min={100} name="height" placeholder="см" step="0.5" type="number" /></label>
