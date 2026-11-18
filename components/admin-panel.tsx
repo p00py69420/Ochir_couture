@@ -4,12 +4,17 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORIES, CATEGORY_LABELS, STATUSES, STATUS_LABELS } from "@/lib/constants";
 import type { Order, OrderStatus, Product } from "@/lib/database.types";
+import { formatSizeBreakdown } from "@/lib/order-sizes";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 type Feedback = { tone: "success" | "error"; message: string } | null;
 
 function mnt(value: number) {
   return `${new Intl.NumberFormat("mn-MN").format(value)}₮`;
+}
+
+function orderSizeLabel(order: Order) {
+  return formatSizeBreakdown(order.size_breakdown) || `${order.size ?? "—"} × ${order.quantity}`;
 }
 
 function safeCsvCell(value: unknown) {
@@ -21,7 +26,7 @@ function safeCsvCell(value: unknown) {
 function downloadOrders(orders: Order[]) {
   const header = [
     "Order", "Created", "Name", "Phone", "Company", "Item", "Category", "Unit price MNT", "Qty", "Total MNT",
-    "Fabric ratio", "Swatch", "Accent swatch", "Size", "Measurements", "Garment view", "Back view", "Reflective tape",
+    "Fabric ratio", "Swatch", "Accent swatch", "Size breakdown", "Legacy size", "Measurements", "Garment view", "Back view", "Reflective tape",
     "Reflective color", "Logo text", "Status",
   ];
   const rows = orders.map((order) => [
@@ -38,7 +43,8 @@ function downloadOrders(orders: Order[]) {
     order.fabric_ratio,
     order.swatch_code,
     order.accent_swatch_code,
-    order.size,
+    orderSizeLabel(order),
+    order.size ?? "",
     JSON.stringify(order.measurements),
     order.garment_view,
     order.back_view,
@@ -271,7 +277,7 @@ export function AdminDashboard({ email }: { email: string }) {
           {loading ? <p className="admin-empty" role="status">Захиалгуудыг ачаалж байна…</p> : orders.length === 0 ? <p className="admin-empty">Одоогоор захиалга алга.</p> : (
             <div className="table-scroll">
               <table>
-                <thead><tr><th>Дугаар</th><th>Огноо</th><th>Нэр / утас</th><th>Компани</th><th>Бараа</th><th>Материал</th><th>Хэмжээ</th><th>Тоо</th><th>Дүн</th><th>Төлөв</th></tr></thead>
+                <thead><tr><th>Дугаар</th><th>Огноо</th><th>Нэр / утас</th><th>Компани</th><th>Бараа</th><th>Материал</th><th>Хэмжээний хуваарилалт</th><th>Тоо</th><th>Дүн</th><th>Төлөв</th></tr></thead>
                 <tbody>
                   {orders.map((order) => (
                     <tr key={order.id}>
@@ -281,7 +287,7 @@ export function AdminDashboard({ email }: { email: string }) {
                       <td>{order.company || "—"}</td>
                       <td>{order.product_name_snapshot}</td>
                       <td>{order.fabric_ratio} · #{order.swatch_code}</td>
-                      <td>{order.size} {Object.entries(order.measurements ?? {}).map(([key, value]) => `${key}:${value}`).join(" ")}</td>
+                      <td>{orderSizeLabel(order)}<br /><span className="muted">{Object.entries(order.measurements ?? {}).map(([key, value]) => `${key}:${value}`).join(" ")}</span></td>
                       <td>{order.quantity}</td>
                       <td>{mnt(order.total_mnt)}</td>
                       <td>

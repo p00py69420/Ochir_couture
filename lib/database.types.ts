@@ -1,3 +1,5 @@
+import type { OrderSizeBreakdown } from "@/lib/order-sizes";
+
 export type Json =
   | string
   | number
@@ -39,7 +41,8 @@ export type Order = {
   fabric_ratio: "65/35" | "20/80";
   swatch_code: number;
   accent_swatch_code: number;
-  size: string;
+  size: string | null;
+  size_breakdown: Partial<OrderSizeBreakdown>;
   measurements: Measurements;
   garment_view: GarmentView;
   back_view: boolean;

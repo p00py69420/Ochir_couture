@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getOrderLimiter } from "@/lib/rate-limit";
 import type { GarmentView, Measurements } from "@/lib/database.types";
+import { MAX_ORDER_QUANTITY, ORDER_SIZES, emptySizeBreakdown, type OrderSize, type OrderSizeBreakdown } from "@/lib/order-sizes";
 import { createServiceSupabaseClient } from "@/lib/supabase/service";
 import { hasSupabasePublicConfig } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
 
-const SIZES = new Set(["S", "M", "L", "XL", "2XL", "3XL", "4XL"]);
 const GARMENT_VIEWS = new Set<GarmentView>(["suit", "jacket", "pants"]);
 const RATIOS = new Set(["65/35", "20/80"]);
 const MEASUREMENT_LIMITS = {
@@ -46,6 +46,25 @@ function validateMeasurements(value: unknown): Measurements | null {
     output[key] = Math.round(parsed * 10) / 10;
   }
   return output;
+}
+
+function validateSizeBreakdown(value: unknown): { breakdown: OrderSizeBreakdown; quantity: number } | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  if (Object.keys(input).some((key) => !ORDER_SIZES.includes(key as OrderSize))) return null;
+
+  const breakdown = emptySizeBreakdown();
+  let quantity = 0;
+  for (const size of ORDER_SIZES) {
+    const rawQuantity = input[size];
+    if (rawQuantity === undefined) continue;
+    if (typeof rawQuantity !== "number" || !Number.isSafeInteger(rawQuantity) || rawQuantity < 0) return null;
+    breakdown[size] = rawQuantity;
+    quantity += rawQuantity;
+  }
+
+  if (quantity < 1 || quantity > MAX_ORDER_QUANTITY) return null;
+  return { breakdown, quantity };
 }
 
 export async function POST(request: Request) {
@@ -105,16 +124,19 @@ export async function POST(request: Request) {
   const customerName = cleanText(body.customerName, 120);
   const phone = cleanText(body.phone, 40);
   const company = cleanText(body.company, 160);
-  const quantity = body.quantity;
+  const sizeSelection = validateSizeBreakdown(body.sizeBreakdown);
   const fabricRatio = cleanText(body.fabricRatio, 5);
-  const size = cleanText(body.size, 3);
   const measurements = validateMeasurements(body.measurements);
   const garmentView = cleanText(body.garmentView, 8) as GarmentView;
   const backView = body.backView;
   const reflectiveTape = body.reflectiveTape;
   const reflectiveColor = cleanText(body.reflectiveColor, 7);
   const logoText = cleanText(body.logoText, 40);
-  const lux = body.lux;
+
+  if (!sizeSelection) {
+    return json({ error: "Хэмжээ тус бүрийн тоог 0-ээс дээш бүхэл тоогоор оруулна уу. Нийт захиалга 2000 ширхгээс хэтрэхгүй." }, 400);
+  }
+  const { breakdown: sizeBreakdown, quantity } = sizeSelection;
 
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(submissionId)) {
     return json({ error: "Илгээмжийн дугаар буруу байна. Дахин оролдоно уу." }, 400);
@@ -125,10 +147,7 @@ export async function POST(request: Request) {
   if (customerName.length < 2 || !/^[+\d\s().-]{4,40}$/.test(phone) || phone.replace(/\D/g, "").length < 4) {
     return json({ error: "Нэр эсвэл утасны дугаарыг шалгана уу." }, 400);
   }
-  if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > 2000) {
-    return json({ error: "Тоо ширхэг 1–2000 хооронд бүхэл тоо байх ёстой." }, 400);
-  }
-  if (!RATIOS.has(fabricRatio) || !SIZES.has(size) || !GARMENT_VIEWS.has(garmentView)) {
+  if (!RATIOS.has(fabricRatio) || !GARMENT_VIEWS.has(garmentView)) {
     return json({ error: "Хэмжээ эсвэл материалын сонголтыг шалгана уу." }, 400);
   }
   if (
@@ -137,7 +156,6 @@ export async function POST(request: Request) {
     typeof backView !== "boolean" ||
     typeof reflectiveTape !== "boolean" ||
     !/^#[0-9A-Fa-f]{6}$/.test(reflectiveColor) ||
-    typeof lux !== "number" || !Number.isInteger(lux) || lux < 0 || lux > 500 ||
     measurements === null
   ) {
     return json({ error: "Өнгө эсвэл нэмэлт хэмжээсийн мэдээллийг шалгана уу." }, 400);
@@ -172,22 +190,23 @@ export async function POST(request: Request) {
         fabric_ratio: fabricRatio as "65/35" | "20/80",
         swatch_code: body.swatchCode,
         accent_swatch_code: body.accentSwatchCode,
-        size,
         measurements,
         garment_view: garmentView,
         back_view: backView,
         reflective_tape: reflectiveTape,
         reflective_color: reflectiveColor,
         logo_text: logoText,
-        lux,
+        lux: 0,
         status: "INITIAL_RECEIVED",
+        size: null,
+        size_breakdown: sizeBreakdown,
       })
-      .select("id,order_number")
+      .select("order_number,quantity,total_mnt")
       .single();
 
     if (error?.code === "23505") return json({ received: true, duplicate: true });
     if (error || !data) return json({ error: "Захиалгыг хадгалж чадсангүй. Дахин оролдоно уу." }, 500);
-    return json({ received: true, orderNumber: data.order_number }, 201);
+    return json({ received: true, orderNumber: data.order_number, quantity: data.quantity, totalMnt: data.total_mnt }, 201);
   } catch {
     return json({ error: "Захиалгын мэдээллийн сан түр холбогдохгүй байна." }, 503);
   }

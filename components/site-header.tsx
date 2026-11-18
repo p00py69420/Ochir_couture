@@ -1,4 +1,15 @@
 import Link from "next/link";
+import { OrderStartLink } from "@/components/order-disclosure";
+
+function SiteNavLinks({ className = "" }: { className?: string }) {
+  return (
+    <nav className={`nav-links ${className}`} aria-label="Үндсэн цэс">
+      <Link href="#studio">3D студи</Link>
+      <OrderStartLink>Захиалга</OrderStartLink>
+      <Link className="nav-admin" href="/admin">Админ нэвтрэх</Link>
+    </nav>
+  );
+}
 
 export function SiteHeader() {
   return (
@@ -7,15 +18,13 @@ export function SiteHeader() {
         <Link className="wordmark" href="#top" aria-label="Ochir Couture нүүр хуудас">
           OCHIR COUTURE <span>МОНГОЛ ОЁДОЛ</span>
         </Link>
-        <details className="nav-disclosure">
-          <summary aria-label="Цэс нээх"><span>Цэс</span><b aria-hidden="true">⌄</b></summary>
-          <nav className="nav-links" aria-label="Үндсэн цэс">
-            <Link href="#catalog">Каталог</Link>
-            <Link href="#studio">3D студи</Link>
-            <Link href="#order">Захиалга</Link>
-            <Link className="nav-admin" href="/admin">Админ нэвтрэх</Link>
-          </nav>
-        </details>
+        <div className="site-navigation">
+          <SiteNavLinks className="desktop-nav" />
+          <details className="nav-disclosure">
+            <summary aria-label="Цэс нээх"><span>Цэс</span><b aria-hidden="true">⌄</b></summary>
+            <SiteNavLinks className="mobile-nav" />
+          </details>
+        </div>
       </div>
     </header>
   );

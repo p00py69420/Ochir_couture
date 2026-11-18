@@ -188,7 +188,6 @@ export function FbxStudio() {
     logoText,
     setLogoText,
     lux,
-    setLux,
   } = useCustomizer();
 
   const paletteRef = useRef<PaletteSelection>({ baseSwatch, accentSwatch, reflectiveTape, reflectiveColor });
@@ -223,7 +222,7 @@ export function FbxStudio() {
     }
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#101a27");
+    scene.background = new THREE.Color("#15130f");
     const camera = new THREE.PerspectiveCamera(31, 1, 0.01, 100);
     const hemisphere = new THREE.HemisphereLight(0xe4edf4, 0x202a36, 1.7);
     const keyLight = new THREE.DirectionalLight(0xfff1dc, 2.35);
@@ -525,10 +524,6 @@ export function FbxStudio() {
           </div>
         </div>
         <p className="model-limit full-row" role="status">{formatModelNote(summary)}</p>
-        <div className="control-block">
-          <label className="control-label" htmlFor="lux-range"><span>Гэрэлтүүлэг</span><small>{lux} / 500</small></label>
-          <input className="range-control" id="lux-range" max={500} min={0} onChange={(event) => setLux(Number(event.currentTarget.value))} type="range" value={lux} />
-        </div>
         <div className="control-block">
           <div className="control-label"><span>Даавууны харьцаа</span><small>Захиалгын сонголт</small></div>
           <div className="control-row" role="group" aria-label="Даавууны харьцаа">

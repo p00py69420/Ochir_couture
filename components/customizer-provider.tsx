@@ -22,7 +22,6 @@ type CustomizerState = {
   logoText: string;
   setLogoText: (value: string) => void;
   lux: number;
-  setLux: (value: number) => void;
   selectedProductId: string;
   setSelectedProductId: (value: string) => void;
 };
@@ -38,7 +37,7 @@ export function CustomizerProvider({ children, initialProductId }: { children: R
   const [reflectiveColor, setReflectiveColor] = useState("#E2E8F0");
   const [fabricRatio, setFabricRatio] = useState<FabricRatio>("65/35");
   const [logoText, setLogoText] = useState("");
-  const [lux, setLux] = useState(500);
+  const lux = 0;
   const [selectedProductId, setSelectedProductId] = useState(initialProductId);
 
   return (
@@ -61,7 +60,6 @@ export function CustomizerProvider({ children, initialProductId }: { children: R
         logoText,
         setLogoText,
         lux,
-        setLux,
         selectedProductId,
         setSelectedProductId,
       }}
